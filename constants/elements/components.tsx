@@ -23,22 +23,22 @@ export const GENERIC_COMPONENTS: Array<Element> = [
         id: "anode",
         name: "A",
         color: "#ff4444",
-        relX: -19.2, // 9.6 * -2 (Grid çizgisi üzerine tam oturması için)
-        relY: 9.6, // 9.6 * 1
+        relX: -19.2,
+        relY: 9.6,
         nodeId: null,
       },
       {
         id: "cathode",
         name: "C",
         color: "#777777",
-        relX: 67.2, // 9.6 * 7
-        relY: 9.6, // 9.6 * 1
+        relX: 67.2,
+        relY: 9.6,
         nodeId: null,
       },
     ],
     ui: {
-      width: 48, // 9.6 * 5 yapısına yakınlaştırmak için
-      height: 19.2, // 9.6 * 2
+      width: 48,
+      height: 19.2,
     },
     renderIcon: (el: Element, isDragging: boolean, isHovered: boolean) => {
       let bodyFill = "fill-[#141414]";
@@ -114,18 +114,16 @@ export const GENERIC_COMPONENTS: Array<Element> = [
     rotation: 0,
     runtime: { voltage: 0, current: 0 },
     properties: {},
-    pins: [], // Breadboard kendisi bir yere bağlanmayacağı için pin dizisi boş kalabilir
+    pins: [],
     ui: {
-      width: 320, // Grid senkronu için genişlik ve yükseklik
+      width: 320, 
       height: 180,
     },
     renderIcon: (el: Element, isDragging: boolean, isHovered: boolean) => {
       const cols = 30;
-      const step = 9.6; // Senin 2.54mm'lik kutsal ölçün
-
+      const step = 9.6;
       return (
         <g>
-          {/* Breadboard Gövdesi */}
           <rect
             x={0}
             y={0}
@@ -136,23 +134,16 @@ export const GENERIC_COMPONENTS: Array<Element> = [
             stroke="#d1d1cf"
             strokeWidth={1.5}
           />
-
-          {/* Orta Ayırıcı Kanal (DIP Entegre Yuvası) */}
           <rect x={5} y={78} width={300} height={8} fill="#e2e2df" />
-
-          {/* 1. Güç Hatları (Üst Kısım: Artı ve Eksi) */}
           {Array.from({ length: cols }).map((_, i) => {
             const xPos = 15 + i * step;
             return (
               <g key={`power-top-${i}`} fill="#3a3a3a">
-                {/* Pozitif Hattı (Kırmızı Çizgi Üstü) */}
                 <circle cx={xPos} cy={15} r={1.2} />
-                {/* Negatif Hattı (Mavi Çizgi Üstü) */}
                 <circle cx={xPos} cy={27} r={1.2} />
               </g>
             );
           })}
-          {/* Güç Çizgileri */}
           <line
             x1={12}
             y1={19}
@@ -171,20 +162,15 @@ export const GENERIC_COMPONENTS: Array<Element> = [
             strokeWidth={0.8}
             opacity={0.6}
           />
-
-          {/* 2. Ana Bileşen Delikleri (A-E ve F-J Blokları) */}
           {Array.from({ length: cols }).map((_, colIdx) => {
             const xPos = 15 + colIdx * step;
             return (
               <g key={`cols-${colIdx}`} fill="#2b2b2b">
-                {/* Üst Blok (A-E Serisi - 5 Delik) */}
                 <circle cx={xPos} cy={45} r={1.4} />
                 <circle cx={xPos} cy={51.4} r={1.4} />
                 <circle cx={xPos} cy={57.8} r={1.4} />
                 <circle cx={xPos} cy={64.2} r={1.4} />
                 <circle cx={xPos} cy={70.6} r={1.4} />
-
-                {/* Alt Blok (F-J Serisi - 5 Delik) */}
                 <circle cx={xPos} cy={95} r={1.4} />
                 <circle cx={xPos} cy={101.4} r={1.4} />
                 <circle cx={xPos} cy={107.8} r={1.4} />
@@ -193,8 +179,6 @@ export const GENERIC_COMPONENTS: Array<Element> = [
               </g>
             );
           })}
-
-          {/* 3. Güç Hatları (Alt Kısım: Artı ve Eksi) */}
           {Array.from({ length: cols }).map((_, i) => {
             const xPos = 15 + i * step;
             return (
@@ -233,12 +217,12 @@ export const GENERIC_COMPONENTS: Array<Element> = [
     type: "led",
     position: { x: 0, y: 0 },
     rotation: 0,
-    runtime: { voltage: 0, current: 0 }, // Simülatör burayı dinamik güncelleyecek
+    runtime: { voltage: 0, current: 0 },
     properties: {
       forwardVoltage: 2.0,
-      forwardCurrent: 0.02, // 20mA tam parlaklık noktası
+      forwardCurrent: 0.02,
       isPolarized: true,
-      maxCurrent: 0.03, // 30mA üstü LED'i bozabilir
+      maxCurrent: 0.03,
       maxVoltage: 5.0,
     },
     pins: [
@@ -246,25 +230,24 @@ export const GENERIC_COMPONENTS: Array<Element> = [
         id: "anode",
         name: "A",
         color: "#ff4444",
-        relX: 0, // Merkeze göre hizalama mantığına göre 9.6'nın katı
-        relY: 38.4, // 9.6 * 4
+        relX: 0,
+        relY: 38.4,
         nodeId: null,
       },
       {
         id: "cathode",
         name: "C",
         color: "#777777",
-        relX: 9.6, // 9.6 * 1
-        relY: 38.4, // 9.6 * 4
+        relX: 9.6,
+        relY: 38.4,
         nodeId: null,
       },
     ],
     ui: {
-      width: 19.2, // 9.6 * 2
-      height: 38.4, // 9.6 * 4
+      width: 19.2,
+      height: 38.4,
     },
     renderIcon: (el: Element, isDragging: boolean, isHovered: boolean) => {
-      // --- PARLAKLIK VE KONTRAST MOTORU ---
       if (!el.properties || !el.runtime) {
         return null;
       }
@@ -276,25 +259,14 @@ export const GENERIC_COMPONENTS: Array<Element> = [
         brightnessRatio = currentmA / targetCurrent;
       }
       const finalBrightness = Math.min(brightnessRatio, 1);
-
-      // --- DURUM KONTROLLERİ (Açık mı, Kapalı mı?) ---
-      const isLit = finalBrightness > 0.05; // Küçük sızıntıları yakma
-
-      // LED sönükken arkadaki metal bacaklar net görünsün diye epoksi şeffaf (fill opacity 0.25)
-      // LED yanarken içi tamamen ışık dolacağı için opaklık fırlayacak (0.85)
+      const isLit = finalBrightness > 0.05;
       const dynamicOpacity = isLit ? 0.85 : 0.25;
-
-      // Sönükken mat/koyu kırmızı (#990000), yanarken parlayan canlı kırmızı (#ff1111)
       const dynamicColor = isLit ? "#ff1111" : "#990000";
-
-      // SVG filtreleri için dinamik gölge (Glow) efekti
-      // Yanmıyorsa gölge yok, yanıyorsa yoğun bir kırmızı parlama çemberi
       const glowFilter = isLit
         ? {
             filter: `drop-shadow(0px 0px ${15 * finalBrightness}px #ff0000) drop-shadow(0px 0px ${5 * finalBrightness}px #ffffff)`,
           }
         : undefined;
-
       let strokeColor = isDragging
         ? "#ffffff"
         : isHovered
@@ -313,7 +285,6 @@ export const GENERIC_COMPONENTS: Array<Element> = [
           className="transition-all duration-150"
           style={glowFilter}
         >
-          {/* Yanma durumunda arkaya devasa bir soft ışık hüzmesi (Ambient Light) */}
           {isLit && (
             <circle
               cx="958"
@@ -323,46 +294,37 @@ export const GENERIC_COMPONENTS: Array<Element> = [
               className="animate-pulse opacity-40 pointer-events-none"
             />
           )}
-
           <defs>
-            {/* Arka plan ışık hüzmesi için gradient */}
             <radialGradient id="ambientGlow" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#ff0000" stopOpacity="1" />
               <stop offset="50%" stopColor="#ff3333" stopOpacity="0.5" />
               <stop offset="100%" stopColor="#ff0000" stopOpacity="0" />
             </radialGradient>
           </defs>
-
-          {/* Sol Metal Bacak */}
           <path
             fillRule="evenodd"
             clipRule="evenodd"
             d="M582.412 3727.91C610.855 3727.91 633.912 3704.85 633.912 3676.41V2107.41C633.912 2078.97 610.855 2055.91 582.412 2055.91C553.969 2055.91 530.912 2078.97 530.912 2107.41V3676.41C530.912 3704.85 553.969 3727.91 582.412 3727.91Z"
             fill="#72706F"
           />
-          {/* İç Metal Anatomisi (Anot Kısmı) */}
           <path
             fillRule="evenodd"
             clipRule="evenodd"
             d="M633.912 2380.48H756.889C765.726 2380.48 772.889 2373.31 772.889 2364.48V2054.85C772.889 2046.01 780.052 2038.85 788.889 2038.85H965.632C974.469 2038.85 981.632 2031.68 981.632 2022.85V1858.81C981.632 1853.15 978.645 1847.92 973.775 1845.04L555.793 1597.92C550.997 1595.09 548.021 1589.96 547.937 1584.39L544.818 1376.57C544.687 1367.83 537.563 1360.81 528.82 1360.81H304.434C295.597 1360.81 288.434 1367.98 288.434 1376.81V2364.48C288.434 2373.31 295.597 2380.48 304.434 2380.48H530.66H633.912Z"
-            fill={isLit ? "#aaaaaa" : "#888888"} // Yandığında iç metal de parlar
+            fill={isLit ? "#aaaaaa" : "#888888"}
           />
-          {/* Sağ Metal Bacak */}
           <path
             fillRule="evenodd"
             clipRule="evenodd"
             d="M1379.91 2055.91C1352.85 2055.91 1330.91 2077.85 1330.91 2104.91V3451.91C1330.91 3478.97 1352.85 3500.91 1379.91 3500.91C1406.97 3500.91 1428.91 3478.97 1428.91 3451.91V2104.91C1428.91 2077.85 1406.97 2055.91 1379.91 2055.91Z"
             fill="#72706F"
           />
-          {/* İç Metal Anatomisi (Katot Kısmı) */}
           <path
             fillRule="evenodd"
             clipRule="evenodd"
             d="M1429.16 2380.48H1613.37C1622.21 2380.48 1629.37 2373.31 1629.37 2364.48V2262.78C1629.37 2260.03 1628.66 2257.32 1627.31 2254.92L1516.89 2059.08C1515.54 2056.68 1514.83 2053.98 1514.83 2051.22V1376.81C1514.83 1367.98 1507.67 1360.81 1498.83 1360.81H658.378C649.541 1360.81 642.378 1367.98 642.378 1376.81V1544.33C642.378 1549.98 645.365 1555.22 650.235 1558.1L1068.07 1805.13C1072.94 1808.01 1075.93 1813.25 1075.93 1818.91V2364.48C1075.93 2373.31 1083.1 2380.48 1091.93 2380.48H1330.41H1429.16Z"
             fill={isLit ? "#aaaaaa" : "#888888"}
           />
-
-          {/* Üst Epoksi Kılıf Kubbesi */}
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -373,7 +335,6 @@ export const GENERIC_COMPONENTS: Array<Element> = [
             strokeWidth="39.824"
             className="transition-all duration-150"
           />
-          {/* Epoksi Kılıf Etek Kısmı (Üst Hat) */}
           <path
             d="M1897.91 2441.37C1897.91 2397.83 1859.33 2354.96 1786.22 2316.72C1775.84 2311.29 1763.68 2319.01 1763.68 2330.71L1763.68 2419.21C1763.68 2422.28 1762.79 2425.28 1761.13 2427.87L1749.33 2446.21C1749.33 2446.21 1748.39 2447.67 1745.87 2450.05L1728.92 2463.61C1728.25 2464.14 1727.54 2464.62 1726.79 2465.04L1683.05 2489.77C1682.29 2490.2 1681.5 2490.56 1680.68 2490.86L1599.91 2520.41L1506.41 2543.41L1419.41 2556.91L1330.91 2568.41L1240.41 2580.41L1157.41 2585.41L1103.41 2588.91H1061.91H1019.91H929.912L831.412 2586.41L723.912 2580.41L579.412 2568.41L502.412 2557.41L423.912 2544.41L360.912 2529.91L300.412 2513.41L256.912 2498.41L218.593 2481.92C217.807 2481.58 217.049 2481.18 216.328 2480.72L185.693 2461.23C184.841 2460.68 184.042 2460.06 183.307 2459.37L168.144 2445.07C167.325 2444.3 166.59 2443.44 165.95 2442.52L156.979 2429.51C155.136 2426.84 154.149 2423.67 154.149 2420.43L154.149 2330.71C154.149 2319.01 141.981 2311.29 131.607 2316.72C58.4989 2354.96 19.912 2397.83 19.912 2441.37C19.912 2586.91 440.409 2704.94 958.901 2704.94C1477.41 2704.94 1897.91 2586.91 1897.91 2441.37Z"
             fill={dynamicColor}
@@ -382,14 +343,12 @@ export const GENERIC_COMPONENTS: Array<Element> = [
             strokeWidth="39.824"
             className="transition-all duration-150"
           />
-          {/* Epoksi Kılıf Etek Kısmı (Gövde Alt Tabanı) */}
           <path
             d="M1896.66 2668.73V2475.33C1896.66 2479.84 1894.76 2484.14 1891.42 2487.17L1866.41 2509.91L1829.63 2541.85C1828.82 2542.56 1827.01 2543.71L1785.91 2566.91L1725.41 2594.41L1662.41 2616.91L1602.41 2633.91L1547.91 2646.41L1487.41 2659.41L1422.91 2669.91L1356.91 2679.91L1289.41 2687.41L1224.41 2693.91L1160.41 2699.91L1089.41 2704.91H1016.41H946.412H860.412L784.912 2700.91L697.912 2694.41L615.412 2687.41L532.912 2676.91L466.912 2666.41L404.412 2655.41L340.912 2639.91L283.412 2625.41L224.912 2606.41L173.912 2586.41L120.412 2561.41L80.1314 2536.18C79.3201 2535.67 78.5561 2535.09 77.8484 2534.44L41.3054 2501.14C40.0511 2499.99 38.9867 2498.66 38.152 2497.18L21.9931 2468.58C20.6367 2466.17 19.924 2463.46 19.9241 2460.7L19.912 2668.73C19.912 2793.62 440.124 2894.91 958.279 2894.91C1476.45 2894.91 1896.66 2793.62 1896.66 2668.73Z"
             fill={dynamicColor}
             fillOpacity={dynamicOpacity}
             className="transition-all duration-150"
           />
-          {/* Epoksi Alt Çember Konturu */}
           <path
             d="M1896.66 2428.91V2668.73C1896.66 2793.62 1476.45 2894.91 958.279 2894.91C440.124 2894.91 19.912 2793.62 19.912 2668.73L19.926 2428.91L19.9241 2460.7C19.924 2463.46 20.6367 2466.17 21.9931 2468.58L38.152 2497.18C38.9867 2498.66 40.0511 2499.99 41.3054 2501.14L77.8484 2534.44C78.5561 2535.09 79.3201 2535.67 80.1314 2536.18L120.412 2561.41L173.912 2586.41L224.912 2606.41L283.412 2625.41L340.912 2639.91L404.412 2655.41L466.912 2666.41L532.912 2676.91L615.412 2687.41L697.912 2694.41L784.912 2700.91L860.412 2704.91H946.412H1016.41H1089.41L1160.41 2699.91L1224.41 2693.91L1289.41 2687.41L1356.91 2679.91L1422.91 2669.91L1487.41 2659.41L1547.91 2646.41L1602.41 2633.91L1662.41 2616.91L1725.41 2594.41L1785.91 2566.91L1827.01 2543.71C1827.94 2543.18 1827.94 2543.18 1829.63 2541.85L1866.41 2509.91L1891.42 2487.17C1894.76 2484.14 1896.66 2479.84 1896.66 2475.33V2428.91Z"
             fill={dynamicColor}
@@ -432,8 +391,27 @@ export const GENERIC_COMPONENTS: Array<Element> = [
         nodeId: null,
       },
       {
+        id: "GP3",
+        name: "GP3",
+        color: "#ff4444",
+        orientation: "left",
+        relX: 12.1,
+        relY: 43.2,
+        nodeId: null,
+      },
+      {
         id: "GP38",
         name: "GP38",
+        color: "#ff4444",
+        orientation: "right",
+        relX: 96,
+        relY: 17.15,
+        nodeId: null,
+      },
+      /* Debug pins */
+      {
+        id: "SWCLK",
+        name: "SWCLK",
         color: "#ff4444",
         orientation: "right",
         relX: 96,
