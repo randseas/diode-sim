@@ -19,6 +19,7 @@ export interface Element {
     capacitance?: number; // Microfarads (For capacitor)
     nominalVoltage?: number; // Volts (For battery)
     forwardVoltage?: number; // Volts (For diode)
+    forwardCurrent?: number; // Amps (For diode)
     reverseLeakage?: number; // Amps (For diode)
     isPolarized?: boolean; // Capacitor/Diode polarity
     maxVoltage?: number; // Volts
@@ -28,6 +29,9 @@ export interface Element {
   // UI parameters
   pins: Array<Pin>;
   ui?: {
+    width?: number;
+    height?: number;
+    zeroPoint?: { x: number; y: number };
     isHovered?: boolean;
     isClicked?: boolean;
     isSelected?: boolean;
@@ -45,6 +49,7 @@ export interface Element {
 export type Pin = {
   id: string;
   name: string;
+  orientation?: "top" | "bottom" | "left" | "right";
   color: string;
   relX: number;
   relY: number;

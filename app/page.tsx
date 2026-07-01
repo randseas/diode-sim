@@ -1,8 +1,8 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { Element, Node, Pin } from "@/types/elements";
+import { useState, useRef, useEffect, DragEventHandler } from "react";
+import { Element, Pin } from "@/types/elements";
 import { GENERIC_ELEMENTS } from "@/constants/elements";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Home() {
   const hasSavedDragHistory = useRef<boolean>(false);
@@ -36,7 +36,14 @@ export default function Home() {
   const [mouseCanvasPos, setMouseCanvasPos] = useState({ x: 0, y: 0 });
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] =
-    useState<Element[]>(GENERIC_ELEMENTS);
+    useState<Record<string, Element[]>>(GENERIC_ELEMENTS);
+
+  const [expandedCategories, setExpandedCategories] = useState<
+    Record<string, boolean>
+  >({
+    Components: true,
+    Sources: true,
+  });
 
   const [wireContextMenu, setWireContextMenu] = useState<{
     x: number;
@@ -97,7 +104,6 @@ export default function Home() {
     );
   };
 
-  // Convert client coordinates to canvas coordinates adjusted for pan and zoom
   function getLocalCoordinates(clientX: number, clientY: number) {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
@@ -105,12 +111,12 @@ export default function Home() {
     const y = (clientY - rect.top - pan.y) / zoom;
     return { x, y };
   }
-  // Handle mouse wheel zoom with linear 10% steps
+
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
-      const currentZoomPercent = Math.round(zoom * 100);
+    const currentZoomPercent = Math.round(zoom * 100);
     const zoomStep = 10;
     let nextZoomPercent =
       e.deltaY < 0
@@ -129,16 +135,24 @@ export default function Home() {
     }));
     setZoom(nextZoom);
   }
-  function handleDrop(e: React.DragEvent) {
+  function handleDrop(e: DragEventHandler<SVGSVGElement> | any) {
     e.preventDefault();
-    const templateId = e.dataTransfer.getData("templateId");
-    const template = GENERIC_ELEMENTS.find((p) => p.id === templateId);
+    const templateId = e.dataTransfer?.getData("templateId");
+
+    const template = Object.values(GENERIC_ELEMENTS)
+      .flat()
+      .find((p) => p.id === templateId);
+
     if (!template) return;
     const { x, y } = getLocalCoordinates(e.clientX, e.clientY);
+
     const newElement: Element = {
       ...template,
       id: crypto.randomUUID(),
-      position: { x, y },
+      position: {
+        x: Math.round(x / 13) * 13,
+        y: Math.round(y / 13) * 13,
+      },
     };
     setElements((prev) => [...prev, newElement]);
   }
@@ -146,10 +160,8 @@ export default function Home() {
     if (e.button !== 0) return;
     const target = e.target as SVGElement;
     if (target.closest('[data-pin="true"]')) return;
-
     e.stopPropagation();
     e.preventDefault();
-
     let newSelected = [...selectedItems];
     const isAlreadySelected = selectedItems.some(
       (item) => item.type === "element" && item.id === el.id,
@@ -197,6 +209,7 @@ export default function Home() {
   }
 
   function handleSvgMouseDown(e: React.MouseEvent) {
+    svgRef.current?.focus();
     if (e.button === 1) {
       setIsPanning(true);
       panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
@@ -241,6 +254,9 @@ export default function Home() {
         }
       }
 
+      const snappedX = Math.round(currentPos.x / 13) * 13;
+      const snappedY = Math.round(currentPos.y / 13) * 13;
+
       setWires((prev) =>
         prev.map((w) => {
           if (w.id !== draggingWireNode.wireId) return w;
@@ -248,7 +264,7 @@ export default function Home() {
             ...w,
             nodes: w.nodes.map((n) =>
               n.id === draggingWireNode.nodeId
-                ? { ...n, x: currentPos.x, y: currentPos.y }
+                ? { ...n, x: snappedX, y: snappedY }
                 : n,
             ),
           };
@@ -310,25 +326,25 @@ export default function Home() {
       saveHistory(elements, "Move Component", "✛");
       hasSavedDragHistory.current = true;
     }
-
     setElements((prev) =>
       prev.map((el) => {
         const isSelected = selectedItems.some(
           (item) => item.type === "element" && item.id === el.id,
         );
         if (isSelected && initialPositions.current[el.id]) {
+          const targetX = initialPositions.current[el.id].x + deltaX;
+          const targetY = initialPositions.current[el.id].y + deltaY;
           return {
             ...el,
             position: {
-              x: initialPositions.current[el.id].x + deltaX,
-              y: initialPositions.current[el.id].y + deltaY,
+              x: targetX,
+              y: targetY,
             },
           };
         }
         return el;
       }),
     );
-
     setWires((prev) =>
       prev.map((w) => {
         return {
@@ -338,10 +354,12 @@ export default function Home() {
               (item) => item.type === "node" && item.nodeId === n.id,
             );
             if (isSelected && initialPositions.current[n.id]) {
+              const targetX = initialPositions.current[n.id].x + deltaX;
+              const targetY = initialPositions.current[n.id].y + deltaY;
               return {
                 ...n,
-                x: initialPositions.current[n.id].x + deltaX,
-                y: initialPositions.current[n.id].y + deltaY,
+                x: Math.round(targetX / 13) * 13,
+                y: Math.round(targetY / 13) * 13,
               };
             }
             return n;
@@ -433,10 +451,21 @@ export default function Home() {
   }
   useEffect(() => {
     const handler = setTimeout(() => {
-      const results = GENERIC_ELEMENTS.filter((el) =>
-        el.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-      setSearchResults(results);
+      if (!searchQuery.trim()) {
+        setSearchResults(GENERIC_ELEMENTS);
+        return;
+      }
+
+      const filtered: Record<string, Element[]> = {};
+      Object.entries(GENERIC_ELEMENTS).forEach(([category, list]) => {
+        const matches = list.filter((el) =>
+          el.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
+        if (matches.length > 0) {
+          filtered[category] = matches;
+        }
+      });
+      setSearchResults(filtered);
     }, 150);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -498,9 +527,8 @@ export default function Home() {
     setContextMenu(null);
   };
 
-  // Mevcut tekli silme fonksiyonunu da güvenli hale getiriyoruz
   const deleteElement = (id: string) => {
-    saveHistory(elements, "Element Deleted", "✕"); // <-- EKLE
+    saveHistory(elements, "Element Deleted", "✕");
     setElements((prev) => prev.filter((el) => el.id !== id));
     setWires((prev) =>
       prev.filter((w) => w.from.elementId !== id && w.to.elementId !== id),
@@ -534,6 +562,15 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
       const isCtrl = e.ctrlKey || e.metaKey;
 
       if (isCtrl && e.code === "KeyA") {
@@ -629,13 +666,10 @@ export default function Home() {
             pins: renewedPins,
           };
         });
-
-        // Sahneye yeni elemanları ekle
         setElements((prev) => [...prev, ...newElements]);
         setSelectedItems(
           newElements.map((el) => ({ type: "element", id: el.id })),
         );
-
         if (clipboard.isCut) {
           setClipboard(null);
         } else {
@@ -652,7 +686,6 @@ export default function Home() {
         }
         return;
       }
-
       if (isCtrl && e.code === "KeyD") {
         const selectedElementIds = selectedItems
           .filter((item) => item.type === "element")
@@ -670,7 +703,6 @@ export default function Home() {
         } else {
           saveHistory(elements, "Element Duplicated", "🗐");
         }
-
         const tempElements: Element[] = [];
         selectedElementIds.forEach((id) => {
           const found = elements.find((el) => el.id === id);
@@ -879,11 +911,19 @@ export default function Home() {
           <div>Tab</div>
         </aside>
         <aside className="w-60 border-r border-[#2b2b2b] bg-[#181818] z-10">
-          <div className="p-2">
-            <h2 className="text-[11px] uppercase tracking-wider text-[#bbbbbb] mb-4 font-bold">
-              Components
-            </h2>
-            <div className="flex flex-col gap-1">
+          <div className="flex flex-col bg-[#181818]">
+            <div className="px-2 py-1 flex items-center justify-between">
+              <div className="flex items-center gap-1 font-normal text-[11.5px] uppercase tracking-wider text-[#aaaaaa]">
+                Categories
+              </div>
+              <span className="text-[10px] bg-[#252526] px-1.5 py-0.25 rounded text-[#666666] border border-[#2b2b2b]">
+                {Object.values(searchResults).reduce(
+                  (acc, list) => acc + list.length,
+                  0,
+                )}
+              </span>
+            </div>
+            <div className="flex flex-col">
               {/* Search bar */}
               <input
                 type="text"
@@ -892,21 +932,65 @@ export default function Home() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setSearchQuery(e.target.value)
                 }
-                className="w-full h-8 mb-4 bg-[#222222] border border-[#333333] rounded px-3 text-[11px] text-white placeholder-[#555555] focus:outline-none focus:border-[#555555] transition-colors"
+                className="w-full h-8 bg-[#222222] ring-inset border-y border-[#2b2b2b] px-2.5 text-[11px] text-white placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555] transition-colors"
               />
-              <div className="space-y-3">
-                {searchResults.map((el: Element) => (
-                  <div
-                    key={el.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, el.id)}
-                    className="w-full h-10 bg-[#333333] hover:bg-[#444444] rounded border border-[#444444] flex items-center justify-center cursor-grab active:cursor-grabbing select-none transition-colors"
-                  >
-                    <span className="text-white text-[10px] capitalize font-medium tracking-wide">
-                      {el.name}
-                    </span>
+              <div className="flex flex-col mt-2 mx-1">
+                {Object.entries(searchResults).map(([category, list]) => {
+                  const isExpanded = expandedCategories[category] ?? true;
+                  return (
+                    <div key={category} className="flex flex-col">
+                      <button
+                        onClick={() =>
+                          setExpandedCategories((prev) => ({
+                            ...prev,
+                            [category]: !isExpanded,
+                          }))
+                        }
+                        className="flex gap-0.5 group cursor-pointer items-center justify-start w-full font-semibold text-[11.5px] uppercase tracking-wider text-[#aaaaaa] mb-2 hover:text-[#dddddd] transition-colors"
+                      >
+                        <span className="text-[#aaaaaa] group-hover:text-[#dddddd] transition-colors">
+                          {isExpanded ? (
+                            <ChevronDown size={15} />
+                          ) : (
+                            <ChevronRight size={15} />
+                          )}
+                        </span>
+                        <span>{category}</span>
+                      </button>
+                      {isExpanded && (
+                        <div className="px-1 space-y-1 mb-2">
+                          {list.map((el: Element) => (
+                            <div
+                              key={el.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, el.id)}
+                              className="w-full h-12 bg-[#222222]/60 hover:bg-[#2a2a2a] rounded border border-[#2b2b2b] hover:border-[#444444] flex items-center gap-3 px-2 cursor-grab active:cursor-grabbing select-none transition-all"
+                            >
+                              <div className="w-10 h-8 bg-[#1a1a1a] border border-[#333333] rounded flex items-center justify-center overflow-hidden shrink-0">
+                                <svg
+                                  width="100%"
+                                  height="100%"
+                                  viewBox={`-5 -5 ${(el.ui?.width || 50) + 10} ${(el.ui?.height || 50) + 10}`}
+                                  className="pointer-events-none"
+                                >
+                                  {el.renderIcon(el, false, false)}
+                                </svg>
+                              </div>
+                              <span className="text-white text-[10px] capitalize font-medium tracking-wide truncate">
+                                {el.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {Object.keys(searchResults).length === 0 && (
+                  <div className="text-center text-[#555555] text-xs py-4 italic">
+                    No components found
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -1093,7 +1177,7 @@ export default function Home() {
                 );
               })()}
           </div>
-          <div className="flex flex-col border-t border-[#2b2b2b] bg-[#181818]">
+          <div className="hidden --flex flex-col border-t border-[#2b2b2b] bg-[#181818]">
             <div className="px-2 py-1 border-b border-[#2b2b2b] flex items-center justify-between">
               <div className="flex items-center gap-1 font-semibold text-[11.5px] uppercase tracking-wider text-[#aaaaaa]">
                 Timeline
@@ -1151,7 +1235,8 @@ export default function Home() {
         >
           <svg
             ref={svgRef}
-            className={`w-full h-full select-none ${
+            tabIndex={0}
+            className={`w-full h-full select-none outline-none ${
               draggingId
                 ? "cursor-grabbing"
                 : isPanning
@@ -1167,16 +1252,6 @@ export default function Home() {
             onClick={closeContextMenu}
             onContextMenu={(e) => e.preventDefault()}
           >
-            <defs>
-              <pattern
-                id="grid"
-                width={20}
-                height={20}
-                patternUnits="userSpaceOnUse"
-              >
-                <circle cx={1} cy={1} r={1} fill="#2f2f2f" />
-              </pattern>
-            </defs>
             <rect width="100%" height="100%" fill="transparent" />
             <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
               <rect
@@ -1195,7 +1270,7 @@ export default function Home() {
                   height={Math.abs(selectionBox.currentY - selectionBox.startY)}
                   fill="rgba(0, 180, 216, 0.04)"
                   stroke="#00b4d8"
-                  strokeWidth={1 / zoom} 
+                  strokeWidth={1 / zoom}
                   strokeDasharray={`${3 / zoom},${3 / zoom}`}
                   pointerEvents="none"
                 />
@@ -1444,29 +1519,31 @@ export default function Home() {
                 const isSelected = selectedItems.some(
                   (item) => item.type === "element" && item.id === el.id,
                 );
+                const zeroPointX = el.ui?.zeroPoint?.x || 0;
+                const zeroPointY = el.ui?.zeroPoint?.y || 0;
                 return (
                   <g
                     key={el.id}
-                    transform={`translate(${el.position.x}, ${el.position.y}) rotate(${el.rotation || 0})`}
+                    transform={`translate(${el.position.x - zeroPointX}, ${el.position.y - zeroPointY}) rotate(${el.rotation || 0})`}
                     onMouseDown={(e: React.MouseEvent) =>
                       handleMouseDown(e, el)
                     }
                     onMouseEnter={() => handleMouseEnterElement(el.id)}
                     onMouseLeave={() => handleMouseLeaveElement(el.id)}
                     onContextMenu={(e) => handleContextMenu(e, el.id)}
-                    className="group/element cursor-grab active:cursor-grabbing"
+                    className="group/element cursor-grab active:cursor-grabbing z-100"
                   >
                     {isSelected && (
                       <rect
-                        x="-25"
-                        y="-25"
-                        width="50"
-                        height="50"
+                        x="-1"
+                        y="-1"
+                        width={el.ui?.width ? el.ui?.width + 2 : 50}
+                        height={el.ui?.height ? el.ui?.height + 2 : 50}
                         fill="transparent"
                         stroke="#00b4d8"
-                        strokeWidth={1.5}
+                        strokeWidth={1.25}
                         strokeDasharray="4,2"
-                        className="pointer-events-none"
+                        className="pointer-events-none z-100"
                       />
                     )}
                     {el.renderIcon(
@@ -1476,22 +1553,57 @@ export default function Home() {
                     )}
                     <text
                       textAnchor="middle"
-                      y="-14"
+                      y="-5"
+                      x={el.ui?.width ? el.ui.width / 2 : 25}
                       className="fill-transparent transition-colors group-hover/element:fill-[#888888] text-[8px] pointer-events-none select-none font-mono"
                     >
                       {el.name}
                     </text>
+                    {/* Debug: zeroPoint dot */}
+                    <rect
+                      x={zeroPointX - 1.5}
+                      y={zeroPointY - 1.5}
+                      width="3"
+                      height="3"
+                      fill="red"
+                      className="pointer-events-none opacity-50"
+                    />
                     {el.pins.map((pin: Pin) => {
-                      const currentRotation = el.rotation || 0;
-                      const textDist = 14;
+                      const dist = 14;
+                      let textAnchor: "start" | "middle" | "end" = "middle";
+                      let dominantBaseline:
+                        | "auto"
+                        | "middle"
+                        | "hanging"
+                        | "baseline" = "middle";
                       let textX = 0;
                       let textY = 0;
-                      if (currentRotation === 90 || currentRotation === 270) {
-                        textX = pin.relX > 0 ? textDist : -textDist;
-                        textY = 0;
-                      } else {
-                        textX = 0;
-                        textY = textDist;
+
+                      switch (pin.orientation) {
+                        case "top":
+                          textX = 0;
+                          textY = -dist;
+                          textAnchor = "middle";
+                          dominantBaseline = "baseline";
+                          break;
+                        case "bottom":
+                          textX = 0;
+                          textY = dist;
+                          textAnchor = "middle";
+                          dominantBaseline = "hanging";
+                          break;
+                        case "left":
+                          textX = -dist;
+                          textY = 0;
+                          textAnchor = "end";
+                          dominantBaseline = "middle";
+                          break;
+                        case "right":
+                          textX = dist;
+                          textY = 0;
+                          textAnchor = "start";
+                          dominantBaseline = "middle";
+                          break;
                       }
                       return (
                         <g
@@ -1517,14 +1629,23 @@ export default function Home() {
                             }
                             className="fill-[#181818] stroke-[#555555] group-hover:stroke-[var(--pin-hover)] stroke-2 pointer-events-none transition-colors duration-150"
                           />
-                          <circle r="10" fill="transparent" className="cursor-pointer" />
+                          <circle
+                            r="6"
+                            fill="transparent"
+                            className="cursor-pointer"
+                          />
                           <text
                             x={textX}
                             y={textY}
-                            transform={`rotate(${-currentRotation}, ${textX}, ${textY})`}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            className="fill-[#666666] group-hover:fill-[#bbbbbb] text-[8px] pointer-events-none select-none font-mono transition-colors duration-150"
+                            textAnchor={textAnchor}
+                            /* @ts-ignore */
+                            dominantBaseline={dominantBaseline}
+                            style={
+                              {
+                                "--pin-hover": pin.color,
+                              } as React.CSSProperties
+                            }
+                            className="fill-[#aaaaaa] transition-colors group-hover:fill-[var(--pin-hover)] text-[8px] pointer-events-none select-none font-mono"
                           >
                             {pin.name}
                           </text>
@@ -1536,8 +1657,9 @@ export default function Home() {
               })}
             </g>
           </svg>
-          <div className="absolute bottom-3 right-3 bg-[#181818]/80 border border-[#2b2b2b] text-[10px] px-2 py-1 rounded text-[#888888] font-mono pointer-events-none">
-            Zoom: {Math.round(zoom * 100)}%
+          <div className="absolute text-start bottom-3 right-3 bg-[#181818]/80 border border-[#2b2b2b] text-[10px] px-2 py-1 rounded text-[#888888] font-mono pointer-events-none flex flex-col items-start gap-0.5">
+            <div>Pins: 2.54 mm</div>
+            <div>Zoom: {Math.round(zoom * 100)}%</div>
           </div>
           {contextMenu && (
             <div
