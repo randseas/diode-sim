@@ -1570,6 +1570,7 @@ export default function Home() {
                     />
                     {el.pins.map((pin: Pin) => {
                       const dist = 14;
+                      const fixing = 0.5;
                       let textAnchor: "start" | "middle" | "end" = "middle";
                       let dominantBaseline:
                         | "auto"
@@ -1581,26 +1582,36 @@ export default function Home() {
 
                       switch (pin.orientation) {
                         case "top":
-                          textX = 0;
-                          textY = -dist;
-                          textAnchor = "middle";
-                          dominantBaseline = "baseline";
+                          textX = -fixing;
+                          textY = -(dist - (fixing * 8));
+                          if (pin.rotation == 90 || pin.rotation == 180) {
+                            textAnchor = "end";
+                            dominantBaseline = "middle";
+                          } else {
+                            textAnchor = "middle";
+                            dominantBaseline = "hanging";
+                          }
                           break;
                         case "bottom":
-                          textX = 0;
+                          textX = -fixing;
                           textY = dist;
-                          textAnchor = "middle";
-                          dominantBaseline = "hanging";
+                          if (pin.rotation == 90 || pin.rotation == 180) {
+                            textAnchor = "start";
+                            dominantBaseline = "middle";
+                          } else {
+                            textAnchor = "middle";
+                            dominantBaseline = "hanging";
+                          }
                           break;
                         case "left":
                           textX = -dist;
-                          textY = 0;
+                          textY = fixing;
                           textAnchor = "end";
                           dominantBaseline = "middle";
                           break;
                         case "right":
                           textX = dist;
-                          textY = 0;
+                          textY = fixing;
                           textAnchor = "start";
                           dominantBaseline = "middle";
                           break;
@@ -1621,13 +1632,13 @@ export default function Home() {
                           }}
                         >
                           <circle
-                            r="4"
+                            r="3"
                             style={
                               {
                                 "--pin-hover": pin.color,
                               } as React.CSSProperties
                             }
-                            className="fill-[#181818] stroke-[#555555] group-hover:stroke-[var(--pin-hover)] stroke-2 pointer-events-none transition-colors duration-150"
+                            className="fill-[#1f1f1f] stroke-[#555555] group-hover:stroke-[var(--pin-hover)] stroke-[1.8] pointer-events-none transition-colors duration-150"
                           />
                           <circle
                             r="6"
@@ -1645,7 +1656,8 @@ export default function Home() {
                                 "--pin-hover": pin.color,
                               } as React.CSSProperties
                             }
-                            className="fill-[#aaaaaa] transition-colors group-hover:fill-[var(--pin-hover)] text-[8px] pointer-events-none select-none font-mono"
+                            transform={`rotate(${pin.rotation || 0}, ${textX}, ${textY})`}
+                            className="fill-[#aaaaaa] transition-colors group-hover:fill-[var(--pin-hover)] text-[6px] pointer-events-none select-none font-mono"
                           >
                             {pin.name}
                           </text>

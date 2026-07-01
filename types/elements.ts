@@ -50,6 +50,7 @@ export type Pin = {
   id: string;
   name: string;
   orientation?: "top" | "bottom" | "left" | "right";
+  rotation?: number;
   color: string;
   relX: number;
   relY: number;
