@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Diode Simulator",
-  description: "An Advanced Electronics Simulator",
+  description: "An Electronics Simulator",
 };
 
 export default function RootLayout({
