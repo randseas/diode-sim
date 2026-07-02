@@ -39,11 +39,15 @@ export interface Element {
     isRotating?: boolean;
     isBlown?: boolean; // For components that can fail (like resistors, capacitors, diodes)
   };
-  renderIcon: (
-    el: Element,
-    isDragging: boolean,
-    isHovered: boolean,
-  ) => React.ReactNode;
+  renderIcon: ({
+    el,
+    isDragging,
+    isHovered,
+  }: {
+    el: Element;
+    isDragging: boolean;
+    isHovered: boolean;
+  }) => React.ReactNode;
 }
 
 export type Pin = {
